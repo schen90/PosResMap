@@ -1,0 +1,7 @@
+/Agata/file/enableLM
+/Agata/file/fileSize 2048
+/Agata/file/workingPath ./trunk/
+/control/execute ./trunk/macros/geom180-Demo.mac
+/Agata/generator/gamma/energy 2000
+/Agata/tracking/method 0
+/Agata/run/beamOn 100000
