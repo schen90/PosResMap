@@ -1,7 +1,7 @@
 #!/bin/bash
-#./parallel_AnaData.sh 1 16
+#./parallel_AnaData.sh 0 15
 
-Nproc=8  # <----------- max parallel procs
+Nproc=16  # <----------- max parallel procs
 
 function PushQue {  # push PID into Que
     Que="$Que $1"
@@ -32,10 +32,18 @@ function ChkQue {  # check Que
 # loop all jobs
 for i in `seq $1 $2`
 do
-    inputfile=rootfiles/SimData/SimData_run$(printf "%04d" $i).root
-    outputfile=rootfiles/AnaData/AnaData_run$(printf "%04d" $i).root
+    inputfile=rootfiles/G4Sim1/G4SimData$(printf "%04d" $i).root
+    outputfile=rootfiles/G4Ana1nc/G4AnaData$(printf "%04d" $i).root
+
     dbfile=pulsedb/pulseA.root
-    ./macros/AnaData $inputfile $outputfile $dbfile&  # <---------- CMD
+    #dbfile=pulsedb/SelfCalib/Det0000_PSC.root
+    #dbfile=pulsedb/SelfCalib/Det0000_2.0.root
+    #dbfile=pulsedb/SelfCalib/Det0000_PSC2.root
+    #dbfile=pulsedb/SelfCalib/Det0000_2.0_2.root
+
+    #./macros/AnaData $inputfile $outputfile $dbfile&  # <---------- CMD
+    ./macros/GridSearch/build/AnaDataGridSearch $inputfile $outputfile $dbfile&  # <---------- CMD
+
     PID=$!
     PushQue $PID
     while [[ $Nrun -ge $Nproc ]]

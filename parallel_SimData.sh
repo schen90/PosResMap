@@ -1,7 +1,7 @@
 #!/bin/bash
-#./parallel_SimData.sh 300000 1 16
+#./parallel.sh 0 15
 
-Nproc=8  # <----------- max parallel procs
+Nproc=16  # <----------- max parallel procs
 
 function PushQue {  # push PID into Que
     Que="$Que $1"
@@ -32,11 +32,10 @@ function ChkQue {  # check Que
 # loop all jobs
 for i in `seq $1 $2`
 do
-    outputfile=rootfiles/SimData/SimData_run$(printf "%04d" $i).root
-    dbfile=pulsedb/pulseA.root
-    ./macros/MakeData $1 $dbfile $outputfile &  # <---------- CMD
+    ./run.sh $i &  # <---------- CMD
     PID=$!
     PushQue $PID
+    sleep 5
     while [[ $Nrun -ge $Nproc ]]
     do
 	ChkQue
