@@ -104,7 +104,7 @@ void CalcMapPointsGrid(){
 
     //output
     for(int ipoint=0; ipoint<gpos.size(); ipoint++){
-      double sigma_phi = 6;
+      double sigma_phi = 2;
       double sigma_r = 1;
       double sigma_z = 1.5;
       fout<<Form("  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",itype,gpos[ipoint].X(),gpos[ipoint].Y(),gpos[ipoint].Z(),sigma_phi,sigma_r,sigma_z)<<endl;

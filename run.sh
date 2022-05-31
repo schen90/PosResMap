@@ -1,15 +1,15 @@
 #!/bin/bash
 #./run.sh 1
 
-obj=/home/userfs/s/sc2950/server/agata/trunk/build-gcc7.4.0/Agata
+#obj=/home/userfs/s/sc2950/server/agata/trunk/build-gcc7.4.0/Agata
 #obj=/home/userfs/s/sc2950/server/agata/trunk/build-gcc9.3.0/Agata
-#obj=/home/sc2950/agata/trunk/build-gcc9.3.0/Agata
+obj=/home/sc2950/agata/trunk/build-gcc9.3.0/Agata
 
-mac=G4mac/sim1gamma.mac.mtd0
+mac=G4mac/sim1gamma.mac
 
 #($obj -Path ./trunk/ -b $mac -run $1)
 ($obj -seed -Path ./trunk/ -b $mac -run $1)
 
-./macros/MakeDataG4 trunk/GammaEvents.$(printf "%04d" $1) rootfiles/G4Sim0/G4SimData$(printf "%04d" $1).root
+./macros/MakeDataG4 trunk/GammaEvents.$(printf "%04d" $1) rootfiles/G4Sim/G4SimData$(printf "%04d" $1).root
 
 rm -f trunk/GammaEvents.$(printf "%04d" $1) trunk/GammaEvents.$(printf "%04d" $1).*

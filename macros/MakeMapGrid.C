@@ -11,6 +11,7 @@
 #include <TRandom3.h>
 #include <TH1.h>
 #include <TProfile.h>
+#include "TSystem.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -26,7 +27,8 @@ using namespace std;
 double maxdist = 1; // 1mm
 double mindist = 0.1;
 // chain
-int nchain = 16;
+int MaxRun = -1;
+float minNetCh = 900;
 
 // segmentation
 const Int_t NCryType = 3;
@@ -169,28 +171,37 @@ void WriteMapGrid(string mapfilename){
 
 
 // make Map
-void MakeMapGrid(int itype, string PSAfile, string mapfilename){
+void MakeMapGrid(int itype, string PSAfile0, string mapfilename){
   if(itype<0 || itype>2) return;
   
   LoadMapGrid(mapfilename);
 
   // get resolution from PSA data
   TChain *tree = new TChain();
-  for(int irun=1; irun<=nchain; irun++)
-    tree->AddFile(Form("%s%04d.root",PSAfile.c_str(),irun),0,"tree");
+  for(int irun=0; ; irun++){
+    if(MaxRun>0 && !(irun<MaxRun)) break;
+    
+    string PSAfile = (string)Form("%s%04d.root",PSAfile0.c_str(),irun);
+    if(gSystem->AccessPathName(PSAfile.c_str())) break;
+    
+    tree->AddFile(PSAfile.c_str(),0,"tree");
+  }
 
+  
+  Int_t numNetCharges;
+  Int_t nhits;
   Int_t seg;
-  Int_t ngrid;
-  Double_t simpos[3];
-  Double_t anapos[3];
-  Double_t dist;
-  Double_t minsum2;
-  tree->SetBranchAddress("simseg",&seg);
-  tree->SetBranchAddress("ngrid",&ngrid);
+  Float_t NetCh;
+  Float_t simpos[3];
+  Float_t anapos[3];
+  Float_t dist;
+  tree->SetBranchAddress("numNetCharges",&numNetCharges);
+  tree->SetBranchAddress("nhits",&nhits);
+  tree->SetBranchAddress("seg",&seg);
+  tree->SetBranchAddress("NetCh",&NetCh);
   tree->SetBranchAddress("simpos",simpos);
   tree->SetBranchAddress("anapos",anapos);
   tree->SetBranchAddress("dist",&dist);
-  tree->SetBranchAddress("minsum2",&minsum2);
 
   int nentries = tree->GetEntriesFast();
   cout<<"read "<<nentries<<" events from tree"<<endl;
@@ -211,16 +222,18 @@ void MakeMapGrid(int itype, string PSAfile, string mapfilename){
     if(ievt%1000==0)
       cout<<"\r finish "<<ievt<<" / "<<nentries<<" events..."<<flush;
     tree->GetEntry(ievt);
-
+    
+    if(NetCh<minNetCh) continue;
+    
     TVector3 vecsim(simpos[0],simpos[1],0);  
     TVector3 vecana(anapos[0],anapos[1],0);  
-    double simphi = vecsim.Phi()/TMath::Pi()*180;
+    double simphi = vecsim.Phi();
     double simr = vecsim.Mag();
-    double anaphi = vecana.Phi()/TMath::Pi()*180;
+    double anaphi = vecana.Phi();
     double anar = vecana.Mag();
     double diffphi = anaphi-simphi;
-    if(diffphi>180)  diffphi-=360;
-    if(diffphi<-180) diffphi+=360;
+    if(diffphi>TMath::Pi())  diffphi-=2*TMath::Pi();
+    if(diffphi<-TMath::Pi()) diffphi+=2*TMath::Pi();
 
     for(int iz=0; iz<MaxSteps; iz++){
       int nextz = 0;
@@ -240,7 +253,7 @@ void MakeMapGrid(int itype, string PSAfile, string mapfilename){
 	    ix;
 
 	  htmp->Fill(ibin);
-	  pres[0]->Fill(ibin,diffphi);
+	  pres[0]->Fill(ibin,simr*diffphi);
 	  pres[1]->Fill(ibin,anar-simr);
 	  pres[2]->Fill(ibin,anapos[2]-simpos[2]);
 	} // end of loop x

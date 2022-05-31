@@ -32,14 +32,23 @@ TCanvas *c;
 void DrawDiffG4(){
   TChain *tree = new TChain();
   for(int irun=0; irun<1; irun++){
-    tree->AddFile(Form("rootfiles/G4Ana1nc/G4AnaData%04d.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Ana1n/G4AnaData%04d.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Ana/G4AnaData%04d.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_1.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_10.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_30.root",irun),0,"tree");
+    tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_1.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_10.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_30.root",irun),0,"tree");
   }
   
   Int_t seg;
+  Float_t NetCh;
   Float_t simpos[3];
   Float_t anapos[3];
   Float_t dist;
   tree->SetBranchAddress("seg",&seg);
+  tree->SetBranchAddress("NetCh",&NetCh);
   tree->SetBranchAddress("simpos",simpos);
   tree->SetBranchAddress("anapos",anapos);
   tree->SetBranchAddress("dist",&dist);
@@ -59,6 +68,7 @@ void DrawDiffG4(){
     if(ievt%1000==0)
       cout<<"\r finish "<<ievt<<" / "<<nentries<<" events..."<<flush;
     tree->GetEntry(ievt);
+    if(NetCh<900) continue;
 
     TVector3 vecsim(simpos[0],simpos[1],0);
     TVector3 vecana(anapos[0],anapos[1],0);
@@ -85,7 +95,7 @@ void DrawDiffG4(){
   hdiff[1]->SetLineColor(2);
   hdiff[2]->SetLineColor(4);
 
-  hdiff[0]->GetYaxis()->SetRangeUser(0,0.55e5);
+  hdiff[0]->GetYaxis()->SetRangeUser(0,0.45e5);
   hdiff[0]->GetYaxis()->SetMaxDigits(4);
   hdiff[0]->GetXaxis()->SetLabelSize(0.05);
   hdiff[0]->GetYaxis()->SetLabelSize(0.05);
