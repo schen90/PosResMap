@@ -37,7 +37,8 @@ void AnaData(string inputfile, string outputfile, string basisfile){
     return;
   }
   TTree *intree = (TTree *)fin->Get("tree");
-  const int nsig = 121; // npoints in 5ns step
+  //const int nsig = 121; // npoints in 5ns step
+  const int nsig = 56; // npoints in 10ns step
   // Declaration of leaf types                                                                     
   int                      ievent;     // event id
   vector<int>             *ndet = 0;   // detector id
@@ -54,8 +55,8 @@ void AnaData(string inputfile, string outputfile, string basisfile){
   vector<vector<int>>     *pseg = 0;   // segment id in pulsedb
   vector<vector<int>>     *vngrid = 0;  // number of grid found around ppos
   vector<vector<int>>     *vextrpl = 0;  // number of grid for extrapolation
-  vector<vector<float>>   *core = 0;   // core pulse shape vector<float(121)>
-  vector<vector<float>>   *spulse = 0; // segment pulse shape vector<float(4356)>
+  vector<vector<float>>   *core = 0;   // core pulse shape vector<float(56)>
+  vector<vector<float>>   *spulse = 0; // segment pulse shape vector<float(2016)>
     
   int                      category; // 1: max 1 seg fired in a det, >1 det fired; 2: max >1 seg fired in a det
 
@@ -163,7 +164,7 @@ void AnaData(string inputfile, string outputfile, string basisfile){
       for(int i=0; i<inter->at(idet).size(); i++){
 	int interid = inter->at(idet)[i];
 
-	simseg.push_back(pseg->at(idet)[i]-1); // pseg start from 1
+	simseg.push_back(pseg->at(idet)[i]); // pseg start from 0
 	simnhits.push_back(1);
 	simeng.push_back(energy->at(interid));
 	vector<float> tmpdetpos;
@@ -196,23 +197,14 @@ void AnaData(string inputfile, string outputfile, string basisfile){
       pointExp pE;
       for(int iseg=0; iseg<NSEGS; iseg++){
 	for(int isig=0; isig<BSIZE; isig++){
-	  pE.tAmp[iseg][isig] = (spulse->at(idet)[iseg*nsig+basis_tzero+isig*2] + spulse->at(idet)[iseg*nsig+basis_tzero+isig*2+1])/2;
+	  //pE.tAmp[iseg][isig] = (spulse->at(idet)[iseg*nsig+basis_tzero+isig*2] + spulse->at(idet)[iseg*nsig+basis_tzero+isig*2+1])/2; // 121 points 5 ns
+	  pE.tAmp[iseg][isig] = spulse->at(idet)[iseg*nsig+isig]; // 56 points 10 ns
 	}
       }
       for(int isig=0; isig<BSIZE; isig++){
-	pE.tAmp[NCHAN-1][isig] = (core->at(idet)[basis_tzero+isig*2] + core->at(idet)[basis_tzero+isig*2+1])/2;
+	//pE.tAmp[NCHAN-1][isig] = (core->at(idet)[basis_tzero+isig*2] + core->at(idet)[basis_tzero+isig*2+1])/2; // 121 points 5 ns
+	pE.tAmp[NCHAN-1][isig] = core->at(idet)[isig]; // 56 points 10 ns
       }
-
-#ifdef NOISE
-      for(int iseg=0; iseg<NCHAN; iseg++){
-	int nidx = (int)gRandom->Uniform(0,NOISE);
-	for(int isig=0; isig<BSIZE; isig++){
-	  nidx = nidx%NOISE;
-	  pE.tAmp[iseg][isig] += noise[nidx];
-	  nidx+=2;
-	}
-      }
-#endif
 
 
       // find hit segments
@@ -231,6 +223,7 @@ void AnaData(string inputfile, string outputfile, string basisfile){
 	      pE.x[numsegs] = simdetpos[ii][0];
 	      pE.y[numsegs] = simdetpos[ii][1];
 	      pE.z[numsegs] = simdetpos[ii][2];
+	      /*
 	      if(fabs(segE-simeng[ii])>2*minSegEnergy){
 		cout<<"seg "<<iseg<<" nhits "<<simnhits[ii]
 		    <<" : segE = "<<segE<<" ; simeng = "<<simeng[ii]<<endl;
@@ -238,14 +231,27 @@ void AnaData(string inputfile, string outputfile, string basisfile){
 		for(int isig=BSIZE-2; isig>BSIZE-7; isig--)
 		  cout<<Form("%.0f ",pE.tAmp[iseg][isig]);
 		cout<<endl;
-
 	      }
+	      */
 	    }
 	  }
 	  numsegs++;
 	}
       }
 
+
+#ifdef NOISE
+      for(int iseg=0; iseg<NCHAN; iseg++){
+	int nidx = (int)gRandom->Uniform(0,NOISE);
+	for(int isig=0; isig<BSIZE; isig++){
+	  nidx = nidx%NOISE;
+	  pE.tAmp[iseg][isig] += 30*noise[nidx]; // scale noise
+	  nidx+=1;
+	}
+      }
+#endif
+
+      
       pE.numNetCharges = numsegs;
       pE.netChSeg = -1;
       pE.bestPt = -1;

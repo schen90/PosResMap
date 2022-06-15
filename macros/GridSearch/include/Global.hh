@@ -16,7 +16,7 @@
 #define FIXED_METRIC FIXED_METRIC_ABSVAL
 
 const bool  gUseAdaptive = true;  // default
-const bool  gCoarseOnly = true;
+const bool  gCoarseOnly = false;
 
 const int   NSLIC = 6;            // 6 slices
 const int   NSECT = 6;            // 6 sectors

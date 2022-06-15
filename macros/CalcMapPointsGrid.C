@@ -40,7 +40,7 @@ void CalcMapPointsGrid(){
   time_t start, stop;
   time(&start);
 
-  string filename[NCryType] = {"pulseA.root","pulseB.root","pulseC.root"};
+  string filename[NCryType] = {"LibTrap_A001.root","LibTrap_B001.root","LibTrap_C001.root"};
     
   string inputfiledir = "pulsedb/";
   string outputfile = "Map/MapPointsGrid.dat";
@@ -66,7 +66,7 @@ void CalcMapPointsGrid(){
     string inputfile = inputfiledir + filename[itype];
     TFile *fin = new TFile(inputfile.c_str());
     TTree *tree = (TTree *)fin->Get("tree");
-    double pos[3];
+    float pos[3];
     tree->SetBranchAddress("pos",pos);
     int nentries = tree->GetEntriesFast();
 
@@ -104,7 +104,7 @@ void CalcMapPointsGrid(){
 
     //output
     for(int ipoint=0; ipoint<gpos.size(); ipoint++){
-      double sigma_phi = 2;
+      double sigma_phi = 6;
       double sigma_r = 1;
       double sigma_z = 1.5;
       fout<<Form("  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",itype,gpos[ipoint].X(),gpos[ipoint].Y(),gpos[ipoint].Z(),sigma_phi,sigma_r,sigma_z)<<endl;

@@ -19,15 +19,13 @@ void SignalBasis::Read(string basisfile){
   }
   cout<<"read pulse signal basis from "<<basisfile<<endl;
 
-  const int nsig = 121; // npoints in 5ns step
+  const int nsig = 56; // npoints in 10ns step
   Int_t seg;
-  Double_t pos[3];
-  Double_t core[121];
-  Double_t spulse[4356];
+  Float_t pos[3];
+  Float_t spulse[nsig*NCHAN];
   TTree *basistree = (TTree *)fbasis->Get("tree");
   basistree->SetBranchAddress("seg",&seg);
   basistree->SetBranchAddress("pos",pos);
-  basistree->SetBranchAddress("core",core);
   basistree->SetBranchAddress("spulse",spulse);
   int npoint = basistree->GetEntriesFast();
 
@@ -38,7 +36,7 @@ void SignalBasis::Read(string basisfile){
     if(ipoint%1000==0) cout<<"\r ipoint = "<<ipoint<<flush;
     basistree->GetEntry(ipoint);
 
-    seg = seg-1;
+    //seg = seg-1;
 
     pointPsa Pt;
     Pt.netChSeg = seg;
@@ -49,11 +47,15 @@ void SignalBasis::Read(string basisfile){
     averPt[seg].z += pos[2];
     
     for(int iseg=0; iseg<NSEGS; iseg++){
-      for(int isig=0; isig<BSIZE; isig++)
-	Pt.Amp[iseg][isig] = (spulse[iseg*nsig+basis_tzero+isig*2] + spulse[iseg*nsig+basis_tzero+isig*2+1])/2;
+      for(int isig=0; isig<BSIZE; isig++){
+	//Pt.Amp[iseg][isig] = (spulse[iseg*nsig+basis_tzero+isig*2] + spulse[iseg*nsig+basis_tzero+isig*2+1])/2;
+	Pt.Amp[iseg][isig] = spulse[iseg*nsig+isig];
+      }
     }
-    for(int isig=0; isig<BSIZE; isig++)
-      Pt.Amp[NCHAN-1][isig] = (core[basis_tzero+isig*2] + core[basis_tzero+isig*2+1])/2;
+    for(int isig=0; isig<BSIZE; isig++){
+      //Pt.Amp[NCHAN-1][isig] = (core[basis_tzero+isig*2] + core[basis_tzero+isig*2+1])/2;
+      Pt.Amp[NCHAN-1][isig] = spulse[NSEGS*nsig+isig];
+    }
     
     segPts[seg]->push_back(Pt);
   }
