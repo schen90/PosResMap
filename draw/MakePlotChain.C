@@ -7,6 +7,7 @@
 #include "TProfile2D.h"
 #include "TProfile3D.h"
 #include "TVector3.h"
+#include "TSystem.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,62 +26,72 @@ const int nseg = 36;
 const int nsli = 6;
 const int nsec = 6;
 
-void MakePlotChain(){
-  TChain *tree = new TChain();
-  for(int irun=1; irun<=16; irun++)
-    tree->AddFile(Form("rootfiles/AnaData_db2.0/AnaData_run%04d.root",irun),0,"tree");
+int MaxRun = -1;
+float minNetCh = 900;
 
+void MakePlotChain(string PSAfile0, string outputfilename){
+  TChain *tree = new TChain();
+  for(int irun=0; ; irun++){
+    if(MaxRun>0 && !(irun<MaxRun)) break;
+
+    string PSAfile = (string)Form("%s%04d.root",PSAfile0.c_str(),irun);
+    if(gSystem->AccessPathName(PSAfile.c_str())) break;
+
+    tree->AddFile(PSAfile.c_str(),0,"tree");
+  }
+
+
+  Int_t numNetCharges;
+  Int_t nhits;
   Int_t seg;
-  Int_t ngrid;
-  Int_t extrpl;
-  Double_t simpos[3];
-  Double_t anapos[3];
-  Double_t dist;
-  Double_t minsum2;
-  tree->SetBranchAddress("simseg",&seg);
-  tree->SetBranchAddress("ngrid",&ngrid);
-  tree->SetBranchAddress("extrpl",&extrpl);
+  Float_t NetCh;
+  Float_t simpos[3];
+  Float_t anapos[3];
+  Float_t dist;
+  tree->SetBranchAddress("numNetCharges",&numNetCharges);
+  tree->SetBranchAddress("nhits",&nhits);
+  tree->SetBranchAddress("seg",&seg);
+  tree->SetBranchAddress("NetCh",&NetCh);
   tree->SetBranchAddress("simpos",simpos);
   tree->SetBranchAddress("anapos",anapos);
   tree->SetBranchAddress("dist",&dist);
-  tree->SetBranchAddress("minsum2",&minsum2);
-
+  
   int nentries = tree->GetEntriesFast();
   cout<<"read "<<nentries<<" events from tree"<<endl;
 
   // define hist
-  TFile *fout = new TFile("draw/plot/plotchain.root","RECREATE");
+  TFile *fout = new TFile(outputfilename.c_str(),"RECREATE");
   TH3F *hxyz = new TH3F("hxyz","simulated xyz position",nbinsxy/2,xymin,xymax,nbinsxy/2,xymin,xymax,nbinsz/2,zmin,zmax);
   TH2F *hxy = new TH2F("hxy","x vs. y",nbinsxy/2,xymin,xymax,nbinsxy/2,xymin,xymax);
   TH2F *hxz = new TH2F("hxz","x vs. z",nbinsxy/2,xymin,xymax,nbinsz/2,zmin,zmax);
   TH2F *hyz = new TH2F("hyz","y vs. z",nbinsxy/2,xymin,xymax,nbinsz/2,zmin,zmax);
 
   TProfile3D *pxyz0[3];
-  pxyz0[0] = new TProfile3D("pxyz0_0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+  pxyz0[0] = new TProfile3D("pxyz0_0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxyz0[1] = new TProfile3D("pxyz1_0","position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxyz0[2] = new TProfile3D("pxyz2_0","position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
   TProfile2D *pxy0[3];
-  pxy0[0] = new TProfile2D("pxy0_0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
+  pxy0[0] = new TProfile2D("pxy0_0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   pxy0[1] = new TProfile2D("pxy0_1","position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   pxy0[2] = new TProfile2D("pxy0_2","position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   TProfile2D *pxz0[3];
-  pxz0[0] = new TProfile2D("pxz0_0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+  pxz0[0] = new TProfile2D("pxz0_0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxz0[1] = new TProfile2D("pxz0_1","position resolution [r]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxz0[2] = new TProfile2D("pxz0_2","position resolution [z]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
   
   TH3D *pxyz[3];
-  pxyz[0] = new TH3D("pxyz0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+  pxyz[0] = new TH3D("pxyz0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxyz[1] = new TH3D("pxyz1","position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxyz[2] = new TH3D("pxyz2","position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
   TH2D *pxy[3];
-  pxy[0] = new TH2D("pxy0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
+  pxy[0] = new TH2D("pxy0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   pxy[1] = new TH2D("pxy1","position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   pxy[2] = new TH2D("pxy2","position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   TH2D *pxz[3];
-  pxz[0] = new TH2D("pxz0","position resolution [rphi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+  pxz[0] = new TH2D("pxz0","position resolution [phi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxz[1] = new TH2D("pxz1","position resolution [r]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   pxz[2] = new TH2D("pxz2","position resolution [z]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
@@ -90,19 +101,19 @@ void MakePlotChain(){
   TProfile2D *pxysli0[nsli][3];
   TH2D *pxysli[nsli][3];
   for(int i=0; i<nsli; i++){
-    psli0[i][0] = new TProfile3D(Form("psli%d_0_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+    psli0[i][0] = new TProfile3D(Form("psli%d_0_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     psli0[i][1] = new TProfile3D(Form("psli%d_1_0",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     psli0[i][2] = new TProfile3D(Form("psli%d_2_0",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
-    psli[i][0] = new TH3D(Form("psli%d_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+    psli[i][0] = new TH3D(Form("psli%d_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     psli[i][1] = new TH3D(Form("psli%d_1",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     psli[i][2] = new TH3D(Form("psli%d_2",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
-    pxysli0[i][0] = new TProfile2D(Form("pxysli%d_0_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
+    pxysli0[i][0] = new TProfile2D(Form("pxysli%d_0_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
     pxysli0[i][1] = new TProfile2D(Form("pxysli%d_1_0",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
     pxysli0[i][2] = new TProfile2D(Form("pxysli%d_2_0",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
 
-    pxysli[i][0] = new TH2D(Form("pxysli%d_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
+    pxysli[i][0] = new TH2D(Form("pxysli%d_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
     pxysli[i][1] = new TH2D(Form("pxysli%d_1",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
     pxysli[i][2] = new TH2D(Form("pxysli%d_2",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsxy,xymin,xymax);
   }
@@ -110,11 +121,11 @@ void MakePlotChain(){
   TProfile2D *pxzsec0[nsec][3];
   TH2D *pxzsec[nsec][3];
   for(int i=0; i<nsec; i++){
-    pxzsec0[i][0] = new TProfile2D(Form("pxzsec%d_0_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+    pxzsec0[i][0] = new TProfile2D(Form("pxzsec%d_0_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     pxzsec0[i][1] = new TProfile2D(Form("pxzsec%d_1_0",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     pxzsec0[i][2] = new TProfile2D(Form("pxzsec%d_2_0",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
 
-    pxzsec[i][0] = new TH2D(Form("pxzsec%d_0",i),"position resolution [rphi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
+    pxzsec[i][0] = new TH2D(Form("pxzsec%d_0",i),"position resolution [phi]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     pxzsec[i][1] = new TH2D(Form("pxzsec%d_1",i),"position resolution [r]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
     pxzsec[i][2] = new TH2D(Form("pxzsec%d_2",i),"position resolution [z]",nbinsxy,xymin,xymax,nbinsz,zmin,zmax);
   }
@@ -124,7 +135,9 @@ void MakePlotChain(){
     if(ievt%1000==0)
       cout<<"\r finish "<<ievt<<" / "<<nentries<<" events..."<<flush;
     tree->GetEntry(ievt);
-    seg = seg-1;
+
+    if(NetCh<minNetCh) continue;
+
     int isli = seg%6;
     int isec = (int)(seg/6);
 
