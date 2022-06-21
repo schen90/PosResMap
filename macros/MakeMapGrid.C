@@ -34,10 +34,11 @@ float minNetCh = 900;
 const Int_t NCryType = 3;
 double griddist = 2; // 2mm grid
 double range[NCryType][3][2]; // range of XYZ
-const Int_t MaxSteps = 45;
+const Int_t MaxSteps = 50;
 
 double Map[NCryType][MaxSteps][MaxSteps][MaxSteps][3]; // position res map (sigma_phi,sigma_r,sigma_z)
 double MapPos[NCryType][MaxSteps][MaxSteps][MaxSteps][3]; // position of map (x,y,z)
+int    Seg[NCryType][MaxSteps][MaxSteps][MaxSteps]; // segment at grid point
 
 // read map
 void LoadMapGrid(string mapfilename){
@@ -61,6 +62,7 @@ void LoadMapGrid(string mapfilename){
 	  Map[itype][ix][iy][iz][0] = -1;
 	  Map[itype][ix][iy][iz][1] = -1;
 	  Map[itype][ix][iy][iz][2] = -1;
+	  Seg[itype][ix][iy][iz] = -1;
 	}
   }
   
@@ -88,10 +90,10 @@ void LoadMapGrid(string mapfilename){
     if(strncmp(buffer,"#Map",4)==0){
       cout<<"reading Map"<<endl;
       fin.getline(buffer,kMaxBufLen);
-      int itype, ipos[3];
+      int itype, iseg, ipos[3];
       double pos[3],res[3];
       while(1){
-        fin >> itype >> pos[0] >> pos[1] >> pos[2];
+        fin >> itype >> iseg >> pos[0] >> pos[1] >> pos[2];
         if(itype==-1) break;
 
 	for(int iaxis=0; iaxis<3; iaxis++){
@@ -114,6 +116,7 @@ void LoadMapGrid(string mapfilename){
 	  Map[itype][ipos[0]][ipos[1]][ipos[2]][i] = res[i];
 	  MapPos[itype][ipos[0]][ipos[1]][ipos[2]][i] = pos[i];
 	}
+	Seg[itype][ipos[0]][ipos[1]][ipos[2]] = iseg;
       }
     }
 
@@ -145,16 +148,17 @@ void WriteMapGrid(string mapfilename){
 
   // output map
   fout<<"#Map #####################"<<endl;
-  fout<<"# itype  x  y  z  sigma_phi sigma_r sigma_z #####################"<<endl;
+  fout<<"# itype seg  x  y  z  sigma_phi sigma_r sigma_z #####################"<<endl;
   for(int itype=0; itype<NCryType; itype++)
     for(int iz=0; iz<MaxSteps; iz++)
       for(int iy=0; iy<MaxSteps; iy++)
 	for(int ix=0; ix<MaxSteps; ix++){
 
-            if(Map[itype][ix][iy][iz][0]<0) continue;
+            if(Seg[itype][ix][iy][iz]<0) continue;
 
-	    fout<<Form("  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",
+	    fout<<Form("  %d  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",
 		       itype,
+		       Seg[itype][ix][iy][iz],
 		       MapPos[itype][ix][iy][iz][0],
 		       MapPos[itype][ix][iy][iz][1],
 		       MapPos[itype][ix][iy][iz][2],
@@ -162,7 +166,7 @@ void WriteMapGrid(string mapfilename){
 		       Map[itype][ix][iy][iz][1],
 		       Map[itype][ix][iy][iz][2])<<endl;
           }
-  fout<<" -1  -1  -1  -1  -1  -1  -1"<<endl;
+  fout<<" -1  -1  -1  -1  -1  -1  -1  -1"<<endl;
 
   fout.close();  
   gROOT->ProcessLine(Form(".!mv -f Map/tmp.dat %s",mapfilename.c_str()));
@@ -277,7 +281,7 @@ void MakeMapGrid(int itype, string PSAfile0, string mapfilename){
     for(int iy=0; iy<MaxSteps; iy++)
       for(int ix=0; ix<MaxSteps; ix++){
 
-	if(Map[itype][ix][iy][iz][0]<0) continue;
+	if(Seg[itype][ix][iy][iz]<0) continue;
 
 	int ibin =
 	  iz*MaxSteps*MaxSteps +

@@ -8,9 +8,11 @@ void Plot2Dsli(){
   gStyle->SetOptStat(0);
   // get hist 2
   //TFile *f = new TFile("plotchain_db0.root");
-  TFile *f = new TFile("plotchain_coarse.root");
+  //TFile *f = new TFile("plotchain_coarse.root");
   //TFile *f = new TFile("plotchain_cf.root");
   //TFile *f = new TFile("plotchain_full.root");
+  //TFile *f = new TFile("plotchain_n90keV.root");
+  TFile *f = new TFile("plotchain_det2.root");
 
   TH2D *h[6];
   for(int i=0; i<6; i++) h[i] = (TH2D *)f->Get(Form("pxysli%d_0",i));

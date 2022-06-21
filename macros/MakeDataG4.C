@@ -23,7 +23,9 @@ bool knoise = false;
 bool kextrapol = true;
 bool kgridip = true;
 
-const int Ntype = 1;
+const double MaxEvt = -10000000; // reduce data size
+
+const int Ntype = 3;
 const int nsig = 56;
 const int nseg = 36;
 const int nchan = nseg+1;
@@ -245,6 +247,8 @@ void MakeDataG4(string G4inputfile, string outputfile){
   int fileidx = 0;
   bool EoF = false;
   while(!feof(fp)){ // loop events in G4inputfile
+    if(MaxEvt>0 && ievent>=MaxEvt) break;
+
     if(ievent%10000==0)
       cout<<"\r finish "<<ievent<<" events... fill "<<ifill<<" fail "<<ifail<<flush;
 
@@ -297,7 +301,7 @@ void MakeDataG4(string G4inputfile, string outputfile){
 	if(ndet[i]>2) continue; // only get pulse db for det 0, 1, 2
 
 	int itype = ndet[i]%3;
-	if(itype!=0) continue; // only get pulse db for type 0 det so far
+	//if(itype!=0) continue; // only get pulse db for type 0 det so far
 
 	int id;
 	for(id=0; id<pdet.size(); id++) if(ndet[i]==pdet[id]) break;

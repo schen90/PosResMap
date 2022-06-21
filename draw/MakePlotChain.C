@@ -237,10 +237,13 @@ void MakePlotChain(string PSAfile0, string outputfilename){
   hyz->Write();
 
   for(int iaxis=0; iaxis<3; iaxis++){
+    // 3D
     pxyz[iaxis]->Write();
     for(int i=0; i<nsli; i++){
       psli[i][iaxis]->Write();
     }
+
+    // 2D sigma
     pxy[iaxis]->Write();
     for(int i=0; i<nsli; i++){
       pxysli[i][iaxis]->Write();
@@ -249,6 +252,14 @@ void MakePlotChain(string PSAfile0, string outputfilename){
     for(int i=0; i<nsec; i++){
       pxzsec[i][iaxis]->Write();
     }
+
+    // 2D mean
+    pxy0[iaxis]->Write();
+    for(int i=0; i<nsli; i++){
+      pxysli0[i][iaxis]->Write();
+    }
+    pxz0[iaxis]->Write();
+
   }
   
   fout->Close();

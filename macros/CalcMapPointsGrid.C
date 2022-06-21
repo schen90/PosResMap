@@ -34,6 +34,14 @@ void swap(vector<TVector3> &v, int m, int l){
   v[l] = temp;
 }
 
+void swap(vector<int> &v, int m, int l){
+  int temp;
+
+  temp = v[m];
+  v[m] = v[l];
+  v[l] = temp;
+}
+
 void CalcMapPointsGrid(){
 
   // clock
@@ -60,22 +68,26 @@ void CalcMapPointsGrid(){
   fout<<" -1  -1  -1  -1  -1  -1  -1  -1  -1  -1"<<endl;
   
   fout<<"#Map #####################"<<endl;
-  fout<<"# itype  x  y  z  sigma_phi sigma_r sigma_z #####################"<<endl;
+  fout<<"# itype seg  x  y  z  sigma_phi sigma_r sigma_z #####################"<<endl;
 
   for(int itype=0; itype<NCryType; itype++){
     string inputfile = inputfiledir + filename[itype];
     TFile *fin = new TFile(inputfile.c_str());
     TTree *tree = (TTree *)fin->Get("tree");
+    int seg;
     float pos[3];
+    tree->SetBranchAddress("seg",&seg);
     tree->SetBranchAddress("pos",pos);
     int nentries = tree->GetEntriesFast();
 
+    vector<int> gseg;
     vector<TVector3> gpos;
     int ievt;
     for(ievt=0; ievt<nentries; ievt++){
       if(ievt%1000==0)  cout<<"\r type "<<itype<<": finish "<<ievt<<"/"<<nentries<<" entries... "<<flush;
       tree->GetEntry(ievt);
 
+      gseg.push_back(seg);
       TVector3 tmppos(pos[0],pos[1],pos[2]);
       gpos.push_back(tmppos);
       for(int iaxis=0; iaxis<3; iaxis++){
@@ -98,6 +110,7 @@ void CalcMapPointsGrid(){
 	    if(gpos[ipoint].X()-gpos[jpoint].X()<-mindist)
 	      continue;
 	  
+	swap(gseg,ipoint,jpoint);	
 	swap(gpos,ipoint,jpoint);	
       }
     }
@@ -107,12 +120,12 @@ void CalcMapPointsGrid(){
       double sigma_phi = 6;
       double sigma_r = 1;
       double sigma_z = 1.5;
-      fout<<Form("  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",itype,gpos[ipoint].X(),gpos[ipoint].Y(),gpos[ipoint].Z(),sigma_phi,sigma_r,sigma_z)<<endl;
+      fout<<Form("  %d  %d   %.2f  %.2f  %.2f  %.2f  %.2f  %.2f",itype,gseg[ipoint],gpos[ipoint].X(),gpos[ipoint].Y(),gpos[ipoint].Z(),sigma_phi,sigma_r,sigma_z)<<endl;
     }
     
     fin->Close();
   }
-  fout<<" -1  -1  -1  -1  -1  -1  -1"<<endl;
+  fout<<" -1  -1  -1  -1  -1  -1  -1  -1"<<endl;
   fout.close();
 
   // output range

@@ -1,0 +1,10 @@
+30 5000000
+./testevents/Int/GammaEvents.cascade
+RootFile.root 
+RadwareFile.sec 
+0.8 0.05 0.02  
+0 0 0
+0.015 1 1 1
+0 0 0.0
+0.05 0. 0. 1.
+

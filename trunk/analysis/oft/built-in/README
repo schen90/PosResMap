@@ -1,0 +1,95 @@
+forward.c is the latest version
+(forward_n.c is older)
+
+Use a bash shell:
+bash
+
+type:
+ulimit -s 65536
+
+Required files: OFTinput, CrystalPositionLookUpTable and the output file of the AGATA simulation package (GammaEvents.0000)
+
+!!!
+IMPORTANT Note: For the GANIL setup 2014-2017 transforming the global positions into relative positions in the detectors
+using the look up table gives wrong positions as there is an extra rotation that is not included in CrystalPositionLookUpTable. 
+!!!
+
+Parameters, file names are defined in OFTinput:
+
+1 5000000 // number of events to be treated together (=multiplicity), total number of events to be read in
+AgataSimulationFileName // input AGATA Geant4 data file name
+RootFile.root  // output Root file
+RadwareFile.sec  // output Radware file
+0.8 0.05 0.02  // sigma_theta, minprobtrack,minprobsing
+0 0 0 // flags off to treat single int. clusters, to include pair production, flag off for Ge sphere approximation
+0.015 0 1 1 // energy threshold in MeV, flag to pack points in segment, flag to smear positions & energies, flag to pack points within 5 mm  (this last flag is generally on)
+0 0 0.0 // position of source (with respect to geometrical center of AGATA)
+0.0 0. 0. 0. // recoil velocity v, vx, vy, vz
+
+
+
+Then compile:
+g++ forward.c -I$ROOTSYS/include `root-config --libs` `root-config --glibs` -lm -o forward 
+
+or
+
+g++ forward.c -I$ROOTSYS/include/root `root-config --libs` `root-config --glibs` -lm -o forward 
+
+
+
+
+and execute:
+./forward
+
+
+Radware file content:
+spec 0: sum of segments in individual detectors (=core because of segment to core adjustment)
+spec 1: tracked spectrum
+spec 2: tracked spectrum without single interaction points
+spec 3: calorimetric spectrum
+
+Root file content:
+
+    TH1F *spectrumin_raw = new TH1F("core_energy_raw","energy",20000,0,20000);
+    TH1F *spectrumin = new TH1F("core_energy","energy",20000,0,20000);
+    TH1F *spectrumin_segtocore = new TH1F("core_energy_segtocore","energy",20000,0,20000);
+    TH2F *core_vs_id = new TH2F("core_energy_vs_core_id","energy",20000,0,20000,180,0,180);
+    TH2F *gammagammacore = new TH2F("core_gammagamma","energy",1000,0,2000,1000,0,2000);
+
+    TH1F *spectrumin_calorraw = new TH1F("calor_energy_raw","energy",20000,0,20000);
+    TH1F *spectrumin_calor = new TH1F("calor_energy","energy",20000,0,20000);
+    
+    TH1F *spectrumint = new TH1F("interaction_point_energy","energy",20000,0,20000);
+    
+    
+    TH1F *spectrumout = new TH1F("TrackedDop","energy",20000,0,20000);
+    TH1F *spectrumout_nodop = new TH1F("TrackednoDop","energy",20000,0,20000);
+    TH1F *spectrumout_sing = new TH1F("TrackedDop_sing","energy",20000,0,20000);
+    TH1F *spectrumout_sing_nodop = new TH1F("TrackednoDop_sing","energy",20000,0,20000);
+    
+    TH2F *coinc = new TH2F("tracked_gammagamma","energy",1000,0,2000,1000,0,2000);
+    
+   
+    TH2F *specvsprob = new TH2F("cluster_energy_vs_prob","energy",1000,0,1,10000,0,20000);
+    TH2F *specvsprobsing = new TH2F("sing_int_cluster_energy_vs_prob","energy",1000,0,1,10000,0,20000);
+    TH2F *specvsrange = new TH2F("sing_cluster_energy_vs_range","energy",1000,0,9,10000,0,20000);
+
+    TH2F *specvsprobpair = new TH2F("pair_prod_cluster_energy_vs_prob","energy",1000,0,1,10000,0,20000);
+   
+    
+    TH2F *XY = new TH2F("XYrel","pos",100,-99.5,99.5,100,-99.5,99.5);
+    TH2F *XZ = new TH2F("XZrel","pos",1000,-99.5,99.5,1000,-0.5,99.5);
+    TH2F *YZ = new TH2F("YZrel","pos",1000,-99.5,99.5,1000,-0.5,99.5);
+    
+    
+    TH2F *XYabs = new TH2F("XYabs","pos",500,-500,500,500,-500,500);
+    TH2F *XZabs = new TH2F("XZabs","pos",500,-500,500,500,-500,500);
+    TH2F *YZabs = new TH2F("YZabs","pos",500,-500,500,500,-500,500);
+    
+
+    
+    TH1F *stat_int= new TH1F("Nbdetectedhits","fold",100,-0.5,99.5);
+    TH1F *stat_det = new TH1F("Nbfiringdets","fold",180,-0.5,179.5);
+    TH1F *stat_det_id = new TH1F("Ndets_dist","detectornbdistribution",180,0,180);
+
+

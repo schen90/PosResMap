@@ -1,4 +1,4 @@
-//./macros/AnaData inputfile outputfile dbfile
+//./macros/AnaData inputfile outputfile detid dbfile
 
 #include "TRint.h"
 #include "TROOT.h"
@@ -22,7 +22,7 @@
 
 using namespace std;
 
-void AnaData(string inputfile, string outputfile, string basisfile){
+void AnaData(string inputfile, string outputfile, int detid, string basisfile){
 
   gInterpreter->GenerateDictionary("vector<vector<int>>","vector");
   gInterpreter->GenerateDictionary("vector<vector<float>>","vector");
@@ -150,7 +150,7 @@ void AnaData(string inputfile, string outputfile, string basisfile){
 
     intree->GetEntry(ievt);
     for(int idet=0; idet<pdet->size(); idet++){
-      if(pdet->at(idet)!=0) continue; // only work on det 0
+      if(pdet->at(idet)!=detid) continue; // only work on detid
 
       //*************************************
       // calc average position
@@ -309,14 +309,10 @@ void AnaData(string inputfile, string outputfile, string basisfile){
 #ifndef __CINT__
 int main(int argc, char *argv[]){
 
-  if(argc>3){
-    AnaData( string(argv[1]), string(argv[2]), string(argv[3]) );
-  }else if(argc>2){
-    AnaData( string(argv[1]), string(argv[2]), "pulsedb/pulseA.root" );
-  }else if(argc>1){
-    AnaData( string(argv[1]), "rootfiles/AnaData.root", "pulsedb/pulseA.root" );
+  if(argc>4){
+    AnaData( string(argv[1]), string(argv[2]), atoi(argv[3]), string(argv[4]) );
   }else{
-    AnaData( "rootfiles/G4SimData.root", "rootfiles/G4AnaData.root", "pulsedb/pulseA.root" );
+    AnaData( "rootfiles/G4SimData.root", "rootfiles/G4AnaData.root", 0, "pulsedb/pulseA.root" );
   }
 
   return 0;

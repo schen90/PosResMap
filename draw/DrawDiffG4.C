@@ -33,7 +33,8 @@ void DrawDiffG4(){
   TChain *tree = new TChain();
   for(int irun=0; irun<1; irun++){
     //tree->AddFile(Form("rootfiles/G4Ana1n/G4AnaData%04d.root",irun),0,"tree");
-    tree->AddFile(Form("rootfiles/G4Ana/G4AnaData%04d_n90keV.root",irun),0,"tree");
+    //tree->AddFile(Form("rootfiles/G4Ana/G4AnaData%04d_n90keV.root",irun),0,"tree");
+    tree->AddFile(Form("rootfiles/G4Ana/det2/G4AnaData%04d.root",irun),0,"tree");
     //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_1.root",irun),0,"tree");
     //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_10.root",irun),0,"tree");
     //tree->AddFile(Form("rootfiles/G4Anadev/G4AnaData%04d_0_30.root",irun),0,"tree");

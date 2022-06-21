@@ -8,9 +8,10 @@ void Plot2D(){
   gStyle->SetOptStat(0);
   // get hist 2
   //TFile *f = new TFile("plotchain_db0.root");
-  TFile *f = new TFile("plotchain_coarse.root");
+  //TFile *f = new TFile("plotchain_coarse.root");
   //TFile *f = new TFile("plotchain_cf.root");
   //TFile *f = new TFile("plotchain_full.root");
+  TFile *f = new TFile("plotchain_n90keV.root");
 
   TH2D *h[6];
   h[0] = (TH2D *)f->Get("pxy0");

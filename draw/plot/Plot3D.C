@@ -6,7 +6,7 @@
 
 void Plot3D(){
   // get hist 3
-  TFile *f = new TFile("plotchain_coarse.root");
+  TFile *f = new TFile("plotchain_n90keV.root");
   TH3 *h3 = (TH3F *)f->Get("pxyz2");
   //TH3 *h3 = (TH3F *)f->Get("psegr3_0");
 
