@@ -10,7 +10,7 @@ const int NCHAN = NSEGS+1;
 TGraph *gr;
 TGraph *gr2;
 
-void CompPulse0(int ientry = 4385){
+void CompPulse0(int ientry = 5385){
   //---------------------------
   Int_t simseg = 0;
   Double_t simpos[3] = {0,0,0};
@@ -20,7 +20,8 @@ void CompPulse0(int ientry = 4385){
   c->SetMargin(0.06,0.01,0.12,0.01);
 
   // ori simulation
-  TFile *f = new TFile("before/LibTrap_A001.root");
+  //TFile *f = new TFile("before/LibTrap_A001.root");
+  TFile *f = new TFile("LibTrap_A001.root");
   TTree *tree = (TTree *)f->Get("tree");
   Int_t seg;
   Float_t pos[3];
@@ -34,7 +35,8 @@ void CompPulse0(int ientry = 4385){
 
   // with XT and preAmp
   //TFile *f2 = new TFile("Xtalk/LibTrap_A001.root");
-  TFile *f2 = new TFile("LibTrap_A001.root");
+  //TFile *f2 = new TFile("LibTrap_A001.root");
+  TFile *f2 = new TFile("Dev/LibTrap_A001.root");
   TTree *tree2 = (TTree *)f2->Get("tree");
   Int_t seg2;
   Float_t pos2[3];

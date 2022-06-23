@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include "TFile.h"
@@ -15,15 +16,21 @@ const int NSLIC = 6;
 const int NSECT = 6;
 const int NSEGS = NSLIC*NSECT;
 const int NCHAN = NSEGS + 1;
-const int NSIGS = 121; // npoints in 5ns step
-const int NZERO = 10;
-const int NSIGS2 = 80; // npoints in 5ns step
+//const int NSIGS = 121; // npoints in 5ns step
+const int NSIGS = 56; // npoints in 10ns step
+const int NZERO = 0;
+const int NSIGS2 = 56; // npoints in 10ns step
 
 const int fstep = 2;
 const int cstep = 6;
 const int cstepx = cstep;
 const int cstepy = cstep;
 const int cstepz = cstep;
+
+#define NOISE 1000000
+float noise[NOISE];
+float noise2[NOISE];
+bool kreadnoise = false;
 
 struct pointPsa{
   int   index;
@@ -92,13 +99,11 @@ int Read(string basisfile){
   cout<<"read pulse signal basis from "<<basisfile<<endl;
 
   Int_t seg;
-  Double_t pos[3];
-  Double_t core[121];
-  Double_t spulse[4356];
+  Float_t pos[3];
+  Float_t spulse[NSIGS*NCHAN];
   TTree *basistree = (TTree *)fbasis->Get("tree");
   basistree->SetBranchAddress("seg",&seg);
   basistree->SetBranchAddress("pos",pos);
-  basistree->SetBranchAddress("core",core);
   basistree->SetBranchAddress("spulse",spulse);
   int npoint = basistree->GetEntriesFast();
 
@@ -109,7 +114,7 @@ int Read(string basisfile){
     if(ipoint%1000==0) cout<<"\r ipoint = "<<ipoint<<flush;
     basistree->GetEntry(ipoint);
 
-    seg = seg-1;
+    //seg = seg-1;
 
     pointPsa Pt;
     Pt.index = ipoint;
@@ -120,13 +125,11 @@ int Read(string basisfile){
     averPt[seg].pos[1] += pos[1];
     averPt[seg].pos[2] += pos[2];
 
-    for(int iseg=0; iseg<NSEGS; iseg++){
+    for(int iseg=0; iseg<NCHAN; iseg++){
       for(int isig=0; isig<NSIGS; isig++)
         Pt.Amp[iseg][isig] = spulse[iseg*NSIGS+isig];
     }
-    for(int isig=0; isig<NSIGS; isig++)
-      Pt.Amp[NCHAN-1][isig] = core[isig];
-
+    
     segPts[seg]->push_back(Pt);
 
     pointPsa PtDev;
@@ -496,7 +499,7 @@ void MakeCoarseDev2(int seg){
   char            *lMask = hmask[seg];
   
   for(int jj=0; jj<npts; jj++){
-    //if( !IsCoarse(jj,seg) ) continue;
+    if( !IsCoarse(jj,seg) ) continue;
     if(nfinish%100==0) cout<<"\r finish "<<nfinish<<" grid points..."<<flush;
     
     for(int iseg=0; iseg<NCHAN; iseg++){
@@ -577,6 +580,61 @@ void MakeCoarseDev2(int seg){
 }
 
 
+void MakeCoarseDev3(int seg){
+  if(!kreadnoise){
+    ifstream fin("NoiseBase.txt");
+    float tmp;
+    for(int i=0; i<NOISE; i++){
+      fin>>tmp;
+      noise[i] = tmp/100;
+      if(2*i<NOISE) noise2[2*i] = tmp/30;
+    }
+
+    for(int i=1; i<NOISE-1; i+=2){
+      noise2[i] = (noise2[i-1]+noise2[i+1])/2.;
+    }
+
+    fin.close();
+    kreadnoise = true;
+  }
+
+  vector<pointPsa> *pdev = segDev[seg];
+  int               npts = pdev->size();
+  char            *lMask = hmask[seg];
+
+  for(int jj=0; jj<npts; jj++){
+    //if( !IsCoarse(jj,seg) ) continue;
+    if(nfinish%100==0) cout<<"\r finish "<<nfinish<<" grid points..."<<flush;
+
+    for(int iseg=0; iseg<NCHAN; iseg++){
+      //if(lMask[iseg]=='0') continue;
+
+      int nidx = (int)gRandom->Uniform(0,NOISE);
+      for(int isig=5; isig<NSIGS-5; isig++){
+
+	nidx = nidx%NOISE;
+	double bincontent = noise[nidx];
+	if(lMask[iseg]=='1' || lMask[iseg]=='9') bincontent = noise2[nidx];
+	
+	if(isig<20){
+	  bincontent *= (isig-5.)/15.;
+	}
+	if(isig>NSIGS-20){
+	  bincontent *= (NSIGS-5.-isig)/15.;
+	}
+
+	pdev->at(jj).Amp[iseg][isig] = bincontent;
+	nidx+=2;
+      }
+    }
+
+    nfinish++;
+  }
+
+  return;
+}
+
+
 void MakeFineDev(int seg){
   vector<pointPsa> *ppts = segDev[seg];
   int               npts = ppts->size();
@@ -591,7 +649,8 @@ void MakeFineDev(int seg){
   bool repeat = true;
   int NAss = 0;
   while(repeat){
-    
+    cout<<"\r"<<Form("seg %d : maxcdist %.2f : NAss %d / %d",seg, maxcdist, NAss, npts)<<flush;
+
     for(int jj=0; jj<npts; jj++){
       if( nAss[jj]==1 ) continue;
 
@@ -676,13 +735,11 @@ void WriteBasisFile(string basisfile, int npoint){
   TFile *fout = new TFile(basisfile.c_str(),"RECREATE");
   TTree *tree = new TTree("tree","tree with deviation");
   Int_t seg;
-  Double_t pos[3];
-  Double_t core[121];
-  Double_t spulse[4356];
+  Float_t pos[3];
+  Float_t spulse[NSIGS*NCHAN];
   tree->Branch("seg",&seg,"seg/I");
-  tree->Branch("pos",pos,"pos[3]/D");
-  tree->Branch("core",core,"core[121]/D");
-  tree->Branch("spulse",spulse,"spulse[4356]/D");
+  tree->Branch("pos",pos,"pos[3]/F");
+  tree->Branch("spulse",spulse,Form("spulse[%d]/F",NSIGS*NCHAN));
 
   for(int i=0; i<npoint; i++){
     int ii;
@@ -691,18 +748,14 @@ void WriteBasisFile(string basisfile, int npoint){
 
     for(int ix=0; ix<3; ix++) pos[ix] = segPts[seg]->at(ii).pos[ix];
 
-    for(int iseg=0; iseg<NSEGS; iseg++){
+    for(int iseg=0; iseg<NCHAN; iseg++){
       for(int isig=0; isig<NSIGS; isig++)
 	spulse[iseg*NSIGS+isig] =
 	  segPts[seg]->at(ii).Amp[iseg][isig] +
 	  segDev[seg]->at(ii).Amp[iseg][isig];
     }
-    for(int isig=0; isig<NSIGS; isig++)
-      core[isig] =
-	segPts[seg]->at(ii).Amp[NCHAN-1][isig] +
-	segDev[seg]->at(ii).Amp[NCHAN-1][isig];
 
-    seg = seg+1;
+    //seg = seg+1;
     tree->Fill();
   }
   fout->cd();
@@ -737,7 +790,7 @@ void AddDev(string basisfile){
 
   cout<<"Make Random Deviation for coarse grid:"<<endl;
   for(int iseg=0; iseg<NSEGS; iseg++){
-    MakeCoarseDev2(iseg);  
+    MakeCoarseDev3(iseg);  
   }
   cout<<"\r finish "<<nfinish<<" grid points..."<<endl;
 
