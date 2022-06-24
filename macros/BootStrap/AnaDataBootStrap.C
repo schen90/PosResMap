@@ -297,9 +297,16 @@ void AnaData(string inputfile, string outputfile, int detid, string basisfile){
 	  }
 	  
 	  for(int isig=0; isig<BSIZE; isig++){
+#define BOOTSTRAP 2
+#if BOOTSTRAP == 1
 	    int idx = (int)gRandom->Uniform(0,residual.size());
 	    pB.tAmp[iseg][isig] = pE.rAmp[iseg][isig] + residual[idx];
 	    residual.erase(residual.begin()+idx);
+#elif BOOTSTRAP == 2
+	    pB.tAmp[iseg][isig] = pE.rAmp[iseg][isig] + gRandom->Gaus(0,residual[isig]);
+#else
+	    cout<<"choose BOOTSTRAP type"<<endl; return;
+#endif
 	  }
 	}
 
