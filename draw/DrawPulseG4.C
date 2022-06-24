@@ -16,33 +16,31 @@ void DrawPulseG4(){
   TCanvas *c = new TCanvas("c","c",600,400);
   c->SetMargin(0.12,0.01,0.12,0.01);
   int seg1,seg2;
-  Double_t spulse[37][121];
-  Double_t core1[121];
-  Double_t spulse1[36][121];
-  Double_t core2[121];
-  Double_t spulse2[36][121];
+  Double_t spulse[37][56];
+  Double_t core1[56];
+  Double_t spulse1[36][56];
+  Float_t spulse2[37][56];
 
   vector<vector<int>>   *pseg   = 0;
   vector<vector<float>> *vcore   = 0;
   vector<vector<float>> *vspulse = 0;
 
-  TFile *f1 = new TFile("rootfiles/G4Sim/G4SimData0001.root");
+  TFile *f1 = new TFile("rootfiles/G4Sim/G4SimData0000.root");
   TTree *tree1 = (TTree *)f1->Get("tree");
   tree1->SetBranchAddress("pseg",&pseg);
   tree1->SetBranchAddress("core",&vcore);
   tree1->SetBranchAddress("spulse",&vspulse);
 
-  TFile *f2 = new TFile("pulsedb/pulseA.root");
+  TFile *f2 = new TFile("pulsedb/LibTrap_A001.root");
   TTree *tree2 = (TTree *)f2->Get("tree");
   tree2->SetBranchAddress("seg",&seg2);
-  tree2->SetBranchAddress("core",core2);
   tree2->SetBranchAddress("spulse",spulse2);
 
-  Float_t x[4477];
-  Float_t y[4477];
+  Float_t x[2072];
+  Float_t y[2072];
   for(int iseg=0; iseg<37; iseg++)
-    for(int i=0; i<121; i++)
-      x[iseg*121+i] = iseg+i*1./121-0.5;
+    for(int i=0; i<56; i++)
+      x[iseg*56+i] = iseg+i*1./56-0.5;
 
   int nentries = tree1->GetEntriesFast();
   int ientry;
@@ -51,7 +49,7 @@ void DrawPulseG4(){
     tree1->GetEntry(ientry);
 
     for(int i=0; i<pseg->at(0).size(); i++){
-      if(pseg->at(0)[i]==27){
+      if(pseg->at(0)[i]==23){
 	cout<<"entry1 "<<ientry<<" seg"<<i<<" = "<<pseg->at(0)[i]<<endl;
 	kfound = true;
 	break;
@@ -59,11 +57,11 @@ void DrawPulseG4(){
     }
     if(kfound){
       for(int iseg=0; iseg<36; iseg++){
-	for(int isig=0; isig<121; isig++){
-	  spulse1[iseg][isig] = vspulse->at(0)[iseg*121+isig];
+	for(int isig=0; isig<56; isig++){
+	  spulse1[iseg][isig] = vspulse->at(0)[iseg*56+isig];
 	}
       }
-      for(int isig=0; isig<121; isig++){
+      for(int isig=0; isig<56; isig++){
 	core1[isig] = vcore->at(0)[isig];
       }
 	
@@ -72,17 +70,17 @@ void DrawPulseG4(){
   }
 
   for(int iseg=0; iseg<37; iseg++){
-    for(int isig=0; isig<121; isig++){
+    for(int isig=0; isig<56; isig++){
       if(iseg==36) spulse[iseg][isig] = core1[isig];
       else         spulse[iseg][isig] = spulse1[iseg][isig];
     }
   }
   
   for(int iseg=0; iseg<37; iseg++)
-    for(int isig=0; isig<121; isig++)
-      y[iseg*121+isig] = spulse[iseg][isig];
+    for(int isig=0; isig<56; isig++)
+      y[iseg*56+isig] = spulse[iseg][isig];
   
-  gr0 = new TGraph(4477,x,y);
+  gr0 = new TGraph(2072,x,y);
   gr0->GetXaxis()->SetRangeUser(-0.5,36.5);
   //gr0->GetYaxis()->SetRangeUser(-0.3,1.1);
   gr0->SetLineWidth(2);
@@ -97,21 +95,22 @@ void DrawPulseG4(){
     }
   }
 
+
   for(int iseg=0; iseg<37; iseg++){
-    for(int isig=0; isig<121; isig++){
-      if(iseg==36) spulse[iseg][isig] = core2[isig];
-      else         spulse[iseg][isig] = spulse2[iseg][isig];
+    for(int isig=0; isig<56; isig++){
+      spulse[iseg][isig] = spulse2[iseg][isig];
     }
   }
   
   for(int iseg=0; iseg<37; iseg++)
-    for(int isig=0; isig<121; isig++)
-      y[iseg*121+isig] = spulse[iseg][isig];
+    for(int isig=0; isig<56; isig++)
+      y[iseg*56+isig] = spulse[iseg][isig];
 
-  gr1 = new TGraph(4477,x,y);
+  gr1 = new TGraph(2072,x,y);
   gr1->SetLineColor(2);
   gr1->SetLineWidth(2);
 
+  
   gr0->GetXaxis()->SetTitle("Segment Number");
   gr0->GetYaxis()->SetTitle("Charge");
   gr0->GetXaxis()->CenterTitle();
